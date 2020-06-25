@@ -1,6 +1,8 @@
 export enum Terms {
   DesktopName = 'name',
   Platform = 'platform',
+  Domain = 'domain',
+  Status = 'status',
   CheckInTime = 'checkin',
   ErrorMessage = 'error_message',
   ErrorType = 'error_type'
@@ -81,7 +83,10 @@ export interface Desktop {
   checkin: Date;
   uptimeSeconds: number;
   platform: string;
+  platformFamily: string;
+  platformVersion: string;
   chefVersion: string;
+  domain: string;
 }
 
 export interface Filter {
@@ -90,9 +95,31 @@ export interface Filter {
   sortingField: string;
   sortingOrder: string;
   terms: TermFilter[];
+  start?: Date;
+  end?: Date;
 }
 
 export interface TermFilter {
   type: string;
   value: string;
+}
+
+export enum NodeMetadataCountType {
+  Status = 'status',
+  Platform = 'platform',
+  Domain = 'domain',
+  Environment = 'environment'
+}
+
+export interface NodeMetadataCountValue {
+  value: string;
+  count: number;
+  disabled: boolean;
+  checked: boolean;
+}
+
+export interface NodeMetadataCount {
+  type: NodeMetadataCountType;
+  label: string;
+  values: NodeMetadataCountValue[];
 }

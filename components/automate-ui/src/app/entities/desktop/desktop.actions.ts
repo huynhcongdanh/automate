@@ -2,7 +2,7 @@ import { Action } from '@ngrx/store';
 import { HttpErrorResponse } from '@angular/common/http';
 
 import { DailyCheckInCountCollection, NodeRunsDailyStatusCollection,
-  TopErrorsCollection, CountedDurationCollection, Desktop, TermFilter } from './desktop.model';
+  TopErrorsCollection, CountedDurationCollection, Desktop, TermFilter, NodeMetadataCount } from './desktop.model';
 
 export enum DesktopActionTypes {
   GET_DAILY_CHECK_IN_TIME_SERIES                  = 'DESKTOP::GET::DAILY_CHECK_IN_TIME_SERIES',
@@ -17,6 +17,10 @@ export enum DesktopActionTypes {
   GET_UNKNOWN_DESKTOP_DURATION_COUNTS             = 'DESKTOP::GET::UNKNOWN_DESKTOP_DURATION_COUNT',
   GET_UNKNOWN_DESKTOP_DURATION_COUNTS_SUCCESS     = 'DESKTOP::GET::UNKNOWN_DESKTOP_DURATION_COUNT::SUCCESS',
   GET_UNKNOWN_DESKTOP_DURATION_COUNTS_FAILURE     = 'DESKTOP::GET::UNKNOWN_DESKTOP_DURATION_COUNT::FAILURE',
+  GET_NODE_METADATA_COUNTS                        = 'DESKTOP::GET::NODE_METADATA_COUNTS',
+  GET_NODE_METADATA_COUNTS_SUCCESS                = 'DESKTOP::GET::NODE_METADATA_COUNTS::SUCCESS',
+  GET_NODE_METADATA_COUNTS_FAILURE                = 'DESKTOP::GET::NODE_METADATA_COUNTS::FAILURE',
+  UPDATE_DESKTOP_LIST_TITLE                       = 'DESKTOP::UPDATE::DESKTOP_LIST_TITLE',
   GET_DESKTOPS                                    = 'DESKTOP::GET::DESKTOPS',
   GET_DESKTOPS_SUCCESS                            = 'DESKTOP::GET::DESKTOPS::SUCCESS',
   GET_DESKTOPS_FAILURE                            = 'DESKTOP::GET::DESKTOPS::FAILURE',
@@ -29,7 +33,8 @@ export enum DesktopActionTypes {
   ADD_DESKTOPS_FILTER_TERM                        = 'DESKTOP::ADD::DESKTOPS_FILTER_TERM',
   UPDATE_DESKTOPS_FILTER_TERMS                    = 'DESKTOP::UPDATE::DESKTOPS_FILTER_TERMS',
   REMOVE_DESKTOPS_FILTER_TERM                     = 'DESKTOP::REMOVE::DESKTOPS_FILTER_TERM',
-  UPDATE_DESKTOPS_SORT_TERM                       = 'DESKTOP::UPDATE::DESKTOPS_SORT_TERM'
+  UPDATE_DESKTOPS_SORT_TERM                       = 'DESKTOP::UPDATE::DESKTOPS_SORT_TERM',
+  UPDATE_DESKTOPS_DATE_TERM                       = 'DESKTOP::UPDATE::DESKTOPS_DATE_TERM'
 }
 
 export class SetSelectedDesktop implements Action {
@@ -99,6 +104,25 @@ export class GetUnknownDesktopDurationCountsFailure implements Action {
   constructor(public payload: HttpErrorResponse) { }
 }
 
+export class GetNodeMetadataCounts implements Action {
+  readonly type = DesktopActionTypes.GET_NODE_METADATA_COUNTS;
+}
+
+export class GetNodeMetadataCountsSuccess implements Action {
+  readonly type = DesktopActionTypes.GET_NODE_METADATA_COUNTS_SUCCESS;
+  constructor(public payload: NodeMetadataCount[]) { }
+}
+
+export class GetNodeMetadataCountsFailure implements Action {
+  readonly type = DesktopActionTypes.GET_NODE_METADATA_COUNTS_FAILURE;
+  constructor(public payload: HttpErrorResponse) { }
+}
+
+export class UpdateDesktopListTitle implements Action {
+  readonly type = DesktopActionTypes.UPDATE_DESKTOP_LIST_TITLE;
+  constructor(public payload: string) { }
+}
+
 export class GetDesktops implements Action {
   readonly type = DesktopActionTypes.GET_DESKTOPS;
 }
@@ -152,6 +176,11 @@ export class UpdateDesktopSortTerm implements Action {
   constructor(public payload: { term: string }) { }
 }
 
+export class UpdateDesktopDateTerm implements Action {
+  readonly type = DesktopActionTypes.UPDATE_DESKTOPS_DATE_TERM;
+  constructor(public payload: { start?: Date, end?: Date }) { }
+}
+
 export type DesktopActions =
   | SetSelectedDaysAgo
   | SetSelectedDesktop
@@ -167,6 +196,10 @@ export type DesktopActions =
   | GetUnknownDesktopDurationCounts
   | GetUnknownDesktopDurationCountsSuccess
   | GetUnknownDesktopDurationCountsFailure
+  | GetNodeMetadataCounts
+  | GetNodeMetadataCountsSuccess
+  | GetNodeMetadataCountsFailure
+  | UpdateDesktopListTitle
   | GetDesktops
   | GetDesktopsSuccess
   | GetDesktopsFailure
@@ -177,4 +210,5 @@ export type DesktopActions =
   | AddDesktopFilterTerm
   | UpdateDesktopFilterTerm
   | RemoveDesktopFilterTerm
-  | UpdateDesktopSortTerm;
+  | UpdateDesktopSortTerm
+  | UpdateDesktopDateTerm;
