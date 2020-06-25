@@ -432,10 +432,15 @@ func (backend *ES2Backend) GetReport(reportId string,
 					reportProfile.Version = esInSpecProfile.Version
 					reportProfile.Sha256 = esInSpecProfile.Sha256
 					reportProfile.Status = esInSpecProfile.Status
-					reportProfile.SkipMessage = esInSpecProfile.SkipMessage
 					reportProfile.Status = esInSpecReportProfileMin.Status
-					reportProfile.SkipMessage = esInSpecReportProfileMin.SkipMessage
 					reportProfile.Full = esInSpecReportProfileMin.Full
+
+					if esInSpecReportProfileMin.StatusMessage != "" {
+						reportProfile.StatusMessage = esInSpecReportProfileMin.StatusMessage
+					} else {
+						// Legacy message only available for the skipped status
+						reportProfile.StatusMessage = esInSpecReportProfileMin.SkipMessage
+					}
 
 					dependsHash := make(map[string]*ESInSpecReportDepends, len(esInSpecReportProfileMin.Depends))
 					for _, esInSpecProfileDependency := range esInSpecReportProfileMin.Depends {
@@ -498,7 +503,7 @@ func (backend *ES2Backend) GetReport(reportId string,
 						Controls:       convertedControls,
 						Attributes:     convertedAttributes,
 						Status:         reportProfile.Status,
-						SkipMessage:    reportProfile.SkipMessage,
+						StatusMessage:  reportProfile.StatusMessage,
 					}
 					profiles = append(profiles, &convertedProfile)
 				}

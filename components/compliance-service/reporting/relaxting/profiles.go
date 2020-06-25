@@ -59,8 +59,6 @@ type ESInspecProfile struct {
 	// ES specific not required by code, harmonized with logstash
 	DocVersion  string `json:"doc_version"`
 	ESTimestamp string `json:"@timestamp"`
-	Status      string `json:"status,omitempty"`
-	SkipMessage string `json:"skip_message,omitempty"`
 }
 
 func (report *ESInspecProfile) toJSON() ([]byte, error) {
@@ -178,8 +176,6 @@ func (esprofile *ESInspecProfile) convertToInspecProfile() (reportingapi.Profile
 	inspecProfile.Supports = convertInspecSupportsToRSSupports(esprofile.Supports)
 	inspecProfile.Depends = convertInspecDependenciesToRSDependencies(esprofile.Dependencies)
 	inspecProfile.Sha256 = esprofile.Sha256
-	inspecProfile.Status = esprofile.Status
-	inspecProfile.SkipMessage = esprofile.SkipMessage
 
 	groups := make([]*reportingapi.Group, 0, len(esprofile.Groups))
 	for _, group := range esprofile.Groups {

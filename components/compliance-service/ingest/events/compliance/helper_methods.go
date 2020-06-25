@@ -208,18 +208,24 @@ func ReportProfilesFromInSpecProfiles(profiles []*inspec_api.Profile, profilesSu
 			}
 		}
 
+		statusMessage := profile.StatusMessage
+		if profile.StatusMessage == "" {
+			// Legacy message only available for the skipped status
+			statusMessage = profile.SkipMessage
+		}
+
 		profilesRep = append(profilesRep, relaxting.ESInSpecReportProfile{
-			Name:         profile.Name,
-			Title:        profile.Title,
-			Profile:      profileSums.Profile,
-			Version:      profile.Version,
-			Full:         fmt.Sprintf("%s, v%s", profile.Title, profile.Version),
-			SHA256:       profile.Sha256,
-			Controls:     minControls,
-			ControlsSums: profileSums.ControlsSums,
-			Depends:      minDepends,
-			Status:       profileSums.Status,
-			SkipMessage:  profile.SkipMessage,
+			Name:          profile.Name,
+			Title:         profile.Title,
+			Profile:       profileSums.Profile,
+			Version:       profile.Version,
+			Full:          fmt.Sprintf("%s, v%s", profile.Title, profile.Version),
+			SHA256:        profile.Sha256,
+			Controls:      minControls,
+			ControlsSums:  profileSums.ControlsSums,
+			Depends:       minDepends,
+			Status:        profileSums.Status,
+			StatusMessage: statusMessage,
 		})
 	}
 	return profilesRep
@@ -234,6 +240,12 @@ type AttributeOption struct {
 // with only the static information, without the results of the controls as the report has it
 func ProfilesFromReport(reportProfiles []*inspec_api.Profile) (profiles []*relaxting.ESInspecProfile, err error) {
 	for _, reportProfile := range reportProfiles {
+		if reportProfile.Status != "" && reportProfile.Status != "loaded" {
+			// Profiles with status of "skipped" or "failed" will not have the
+			// controls and their incomplete metadata should not be stored
+			logrus.Debugf("ProfilesFromReport not returning profile %s due to status of %s", reportProfile.Name, reportProfile.Status)
+			continue
+		}
 		esProfile := relaxting.ESInspecProfile{
 			Name:           reportProfile.Name,
 			Title:          reportProfile.Title,
