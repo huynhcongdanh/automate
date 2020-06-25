@@ -8,7 +8,7 @@
   "roles": [],
   "recipes": [],
   "end_time": "2020-06-20T03:02:02Z",
-  "version": "3.1.3",
+  "version": "4.20.0",
   "platform": {
     "name": "ubuntu",
     "release": "18.04"
@@ -26,10 +26,10 @@
   "fqdn": "web-ubu.example.com",
   "profiles": [
     {
-      "name": "myprofile",
+      "name": "myskippy",
       "version": "1.0.0",
-      "sha256": "5596bb07ef4f11fd2e03a0a80c4adb7c61fc0b4d0aa6c1410b3c715c94b367da",
-      "title": "My Profile title",
+      "sha256": "5596bb07ef4f11fd2e03a0a80c4adb7c61fc0b4d0aa6c1410b3c715c94b36777",
+      "title": "My Skipped Profile title",
       "maintainer": "Demo, Inc.",
       "summary": "My Profile summary",
       "license": "Apache-2.0",
@@ -44,13 +44,13 @@
       "groups": [],
       "controls": [],
       "status": "skipped",
-      "skip_message": "Skipping profile: 'myprofile' on unsupported platform: 'ubuntu/18.04'."
+      "status_message": "Skipping profile: 'myprofile' on unsupported platform: 'ubuntu/18.04'."
     },
     {
-      "name": "myprofile2",
+      "name": "myfaily",
       "version": "1.0.0",
-      "sha256": "5596bb07ef4f11fd2e03a0a80c4adb7c61fc0b4d0aa6c1410b3c715c94b367dd",
-      "title": "My Profile title",
+      "sha256": "5596bb07ef4f11fd2e03a0a80c4adb7c61fc0b4d0aa6c1410b3c715c94b36888",
+      "title": "My Faily Profile title",
       "maintainer": "Demo, Inc.",
       "summary": "My Profile summary",
       "license": "Apache-2.0",
@@ -58,14 +58,14 @@
       "copyright_email": "support@example.com",
       "supports": [
         {
-          "platform-family": "windows"
+          "platform-family": "linux"
         }
       ],
       "attributes": [],
       "groups": [],
       "controls": [],
       "status": "failed",
-      "skip_message": "ERROR: DEPRECATION: The apache resource is deprecated This resource was removed in InSpec 4.0. (used at apache-baseline-0b5f21e668940d53e85c2ca36b41ba7ae18fac01/controls/apache_spec.rb:25)"
+      "status_message": "ERROR: DEPRECATION: The apache resource is deprecated This resource was removed in InSpec 4.0. (used at apache-baseline-0b5f21e668940d53e85c2ca36b41ba7ae18fac01/controls/apache_spec.rb:25)"
     },
     {
       "name": "linux-baseline",
