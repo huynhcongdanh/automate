@@ -420,7 +420,12 @@ func (backend *ES2Backend) GetReport(reportId string,
 					logrus.Debugf("Determine profile: %s", esInSpecReportProfileMin.Name)
 					esInSpecProfile, err := backend.GetProfile(esInSpecReportProfileMin.SHA256)
 					if err != nil {
-						logrus.Errorf("%s - Could not get profile: %s", myName, err.Error())
+						logrus.Errorf("%s - Could not get profile '%s' error: %s", myName, esInSpecReportProfileMin.SHA256, err.Error())
+						logrus.Debugf("%s - Making the most from the profile information in esInSpecReportProfileMin", myName)
+						esInSpecProfile.Name = esInSpecReportProfileMin.Name
+						esInSpecProfile.Title = esInSpecReportProfileMin.Title
+						esInSpecProfile.Version = esInSpecReportProfileMin.Version
+						esInSpecProfile.Sha256 = esInSpecReportProfileMin.SHA256
 					}
 
 					reportProfile := inspec.Profile{}
