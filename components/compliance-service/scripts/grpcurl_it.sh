@@ -84,11 +84,22 @@ fi
 # List all jobs
 # grpcurl $CURL_OPTS_COMP.jobs.JobsService/List
 
+# List stats failures for a specific date
+# REST: /compliance/reporting/stats/failures
+# grpcurl -d @ $CURL_COMP chef.automate.domain.compliance.stats.StatsService/ReadFailures <<EOM
+# {
+#   "filters": [
+#     { "type": "types", "values": ["platform", "profile"] },
+#     { "type": "end_time", "values":["2018-04-02T23:59:59Z"] }
+#   ]
+# }
+# EOM
+
 # List all reporting profiles for a specific date
 # grpcurl -d @ $CURL_OPTS_COMP.reporting.ReportingService/ListProfiles <<EOM
 # {
 #   "filters": [
-#     { "type": "end_time", "values":["2020-06-20T23:59:59Z"] }
+#     { "type": "end_time", "values":["2018-04-02T23:59:59Z"] }
 #   ],
 #   "page": 1,
 #   "per_page": 100
