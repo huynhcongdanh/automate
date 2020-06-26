@@ -571,15 +571,27 @@ func (backend *ES2Backend) GetAllProfilesFromNodes(from int32, size int32, filte
 
 	//if one of the "other" filters are sent in, regardless of profile_id, we need to get the ids from scans
 	profileMins, counts, err := backend.getProfileMinsFromNodes(filters)
+	logrus.Debugf("Got from nodes profileMins=%+v", profileMins)
 	if err != nil {
 		return nil, nil, errors.Wrapf(err, "%s, cannot get profileIDs from nodes", myName)
 	}
 
 	profileIDs := make([]string, 0)
+	profilesToReturn := make([]*reportingapi.ProfileMin, len(profileMins))
+	i := 0
 	for _, profileMin := range profileMins {
 		profileIDs = append(profileIDs, profileMin.ID)
-		logrus.Debugf("profile id: %s", profileMin.ID)
+		profilesToReturn[i] = &reportingapi.ProfileMin{
+			Name:    profileMin.Name,
+			Title:   profileMin.Title,
+			Version: profileMin.Version,
+			Id:      profileMin.ID,
+			Status:  profileMin.Status,
+		}
+		i += 1
 	}
+
+	logrus.Debugf("%s querying the profiles index with ids: %v", myName, profileIDs)
 
 	query := elastic.NewIdsQuery(mappings.DocType)
 	query.Ids(profileIDs...)
@@ -619,26 +631,42 @@ func (backend *ES2Backend) GetAllProfilesFromNodes(from int32, size int32, filte
 
 	LogQueryPartMin(esIndex, searchResult, fmt.Sprintf("%s - search result", myName))
 
-	profiles := make([]*reportingapi.ProfileMin, 0)
+	profilesMetaMap := make(map[string]reportingapi.ProfileMin, 0)
 	if searchResult.TotalHits() > 0 && searchResult.Hits.TotalHits > 0 {
+		// Loop over the data from the compliance-profiles metadata index
 		for _, hit := range searchResult.Hits.Hits {
 			var profile reportingapi.ProfileMin
 			if hit.Source != nil {
 				err := json.Unmarshal(*hit.Source, &profile)
 				if err == nil {
-					profile.Id = hit.Id
-					profile.Status = profileMins[profile.Id].Status
-					profiles = append(profiles, &profile)
+					profilesMetaMap[hit.Id] = profile
 				} else {
 					logrus.Errorf("%s unmarshal error: %s", myName, err.Error())
 				}
 			}
 		}
-		return profiles, counts, nil
+
+		// We only need the version and title from the compliance profiles index
+		// A profile that hasn't been saved in the profiles index and comes into a report as failed or skipped (w/ a `status_message`)
+		// will have profileMin entry from the report but not a compliance profiles metadata entry
+		for _, profileToReturn := range profilesToReturn {
+			if meta, ok := profilesMetaMap[profileToReturn.Id]; ok {
+				profileToReturn.Version = meta.Version
+				profileToReturn.Title = meta.Title
+			} else {
+				// This is the case where the profile is not stored in the metadata compliance profiles index
+				// Better return the name for the title instead of leaving it blank
+				profileToReturn.Title = profileToReturn.Name
+				logrus.Debugf("%s profile '%s' was not found in the metadata index, usin Name for Title", myName, profileToReturn.Name)
+			}
+		}
+		logrus.Debugf("%s searched for %d profile IDs, got %d", myName, len(profileIDs), len(profilesMetaMap))
+		logrus.Debugf("%s returning profiles=%+v with counts %+v", myName, profilesToReturn, counts)
+		return profilesToReturn, counts, nil
 	}
 
 	logrus.Debugf("%s, found no profiles\n", myName)
-	return profiles, counts, nil
+	return profilesToReturn, counts, nil
 }
 
 func (backend ES2Backend) getProfileMinsFromNodes(
