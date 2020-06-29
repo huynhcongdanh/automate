@@ -146,11 +146,11 @@
       <chef-tbody>
         <chef-tr>
           <chef-th>Manufacturer</chef-th>
-          <chef-td>--</chef-td>
+          <chef-td>{{ desktop.dmi_system_manufacturer }}</chef-td>
         </chef-tr>
         <chef-tr>
           <chef-th>Serial Number</chef-th>
-          <chef-td>--</chef-td>
+          <chef-td>{{ desktop.dmi_system_serial_number }}</chef-td>
         </chef-tr>
       </chef-tbody>
     </chef-table>
@@ -160,11 +160,11 @@
       <chef-tbody>
         <chef-tr>
           <chef-th>System</chef-th>
-          <chef-td>--</chef-td>
+          <chef-td>{{ desktop.virtualization_system }}</chef-td>
         </chef-tr>
         <chef-tr>
           <chef-th>Role</chef-th>
-          <chef-td>--</chef-td>
+          <chef-td>{{ desktop.virtualization_role }}</chef-td>
         </chef-tr>
       </chef-tbody>
     </chef-table>
