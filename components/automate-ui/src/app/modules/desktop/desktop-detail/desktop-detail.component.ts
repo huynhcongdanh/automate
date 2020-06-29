@@ -62,6 +62,8 @@ export class DesktopDetailComponent {
     };
     const filters = this.nodeHistoryStore.filter.getValue();
     filters.nodeId = this.desktop.id;
+    // set start date to the same as the check in history start date
+    filters.startDate = moment().subtract(this.checkInNumDays, 'days').toString();
 
     this.nodeRunsService.downloadRuns(format, filters).pipe(
       finalize(onComplete))
