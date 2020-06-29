@@ -126,13 +126,19 @@ func (backend *ESClient) ProfileExists(hash string) (bool, error) {
 func (backend *ESClient) ProfilesMissing(allHashes []string) (missingHashes []string, err error) {
 	idsQuery := elastic.NewIdsQuery(mappings.DocType)
 	idsQuery.Ids(allHashes...)
+	docVersionQuery := elastic.NewMatchQuery("doc_version", "1")
+
+	boolQuery := elastic.NewBoolQuery()
+	boolQuery = boolQuery.Must(idsQuery)
+	boolQuery = boolQuery.Must(docVersionQuery)
+
 	esIndex := relaxting.CompProfilesIndex
 
 	fsc := elastic.NewFetchSourceContext(false)
 
 	searchSource := elastic.NewSearchSource().
 		FetchSourceContext(fsc).
-		Query(idsQuery).
+		Query(boolQuery).
 		Size(1000)
 
 	source, err := searchSource.Source()
@@ -267,6 +273,12 @@ func (backend *ESClient) InsertInspecReport(ctx context.Context, id string, endT
 
 func (backend *ESClient) InsertInspecProfile(ctx context.Context, data *relaxting.ESInspecProfile) error {
 	mapping := mappings.ComplianceProfiles
+	if len(data.Controls) == 0 {
+		// Use this to flag a profile that seems incomplete. Probably skipped or failed.
+		// We just store it for the profile only metadata, looking to replace it when the same profile
+		// is ingested that contains controls metadata as well
+		data.DocVersion = "0"
+	}
 	err := backend.addDataToIndexWithID(ctx, mapping, data.Sha256, data)
 	return err
 }

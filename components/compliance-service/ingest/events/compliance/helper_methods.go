@@ -240,12 +240,6 @@ type AttributeOption struct {
 // with only the static information, without the results of the controls as the report has it
 func ProfilesFromReport(reportProfiles []*inspec_api.Profile) (profiles []*relaxting.ESInspecProfile, err error) {
 	for _, reportProfile := range reportProfiles {
-		if reportProfile.Status != "" && reportProfile.Status != "loaded" {
-			// Profiles with status of "skipped" or "failed" will not have the
-			// controls and their incomplete metadata should not be stored
-			logrus.Debugf("ProfilesFromReport not returning profile %s due to status of %s", reportProfile.Name, reportProfile.Status)
-			continue
-		}
 		esProfile := relaxting.ESInspecProfile{
 			Name:           reportProfile.Name,
 			Title:          reportProfile.Title,

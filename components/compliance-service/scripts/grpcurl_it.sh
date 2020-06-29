@@ -105,3 +105,16 @@ fi
 #   "per_page": 100
 # }
 # EOM
+
+
+# REST: /compliance/reporting/stats/profiles
+# Read summary stats for a profile
+# grpcurl -d @ $CURL_OPTS_COMP.stats.StatsService/ReadProfiles <<EOM
+# {
+#   "type": "summary",
+#   "id":"5596bb07ef4f11fd2e03a0a80c4adb7c61fc0b4d0aa6c1410b3c715c94b36777",
+#   "filters": [
+#     {"type":"end_time","values":["2018-04-02T23:59:59Z"]}
+#   ]
+# }
+# EOM
