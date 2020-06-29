@@ -1,0 +1,99 @@
+require 'json'
+require 'open-uri'
+
+if ['up', 'ssh', 'provision', 'halt'].include?(ARGV[0])
+  raise 'ENV variable SSH_HOST is not defined!' if ENV['SSH_HOST'].nil?
+  raise 'ENV variable SSH_KEY_PATH for the private key is not defined!' if ENV['SSH_KEY_PATH'].nil?
+  raise 'ENV variable SSH_USER is not defined!' if ENV['SSH_USER'].nil?
+  raise 'ENV variable SSH_USER can\'t be root!' if ENV['SSH_USER'] == 'root'
+end
+
+ssh_host = ENV['SSH_HOST']
+ssh_user = ENV['SSH_USER']
+ssh_key_path = ENV['SSH_KEY_PATH']
+home_dir = "/home/#{ssh_user}"
+current_branch = `git rev-parse --abbrev-ref HEAD`
+latest_head_commit = `git rev-parse HEAD`
+latest_origin_commit = `git rev-parse origin/#{current_branch}`
+clean_tree = system('git status | grep "nothing to commit"')
+
+# Only run these checks on `vagrant up`
+if ['up', 'provision'].include?(ARGV[0])
+  if !clean_tree
+    puts %q(
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      ! You have uncommitted changes that won't exist when we do the git clone on the remote instance !
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    )
+  end
+  if latest_head_commit != latest_origin_commit
+    puts %q(
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+      ! You have unpushed commits that won't exist when we do the git clone on the remote instance !
+      !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    )
+  end
+
+  if ENV['GITHUB_TOKEN'].nil?
+    raise "ENV variable GITHUB_TOKEN must be defined for this, aborting..."
+  end
+end
+
+install_victorias_bits = <<SCRIPT
+apt-get install git make -y
+snap install jq
+echo "* soft nofile 100000" >> /etc/security/limits.conf
+echo "* hard nofile 256000" >> /etc/security/limits.conf
+echo "root soft nofile 100000" >> /etc/security/limits.conf
+echo "root hard nofile 256000" >> /etc/security/limits.conf
+sysctl fs.inotify.max_user_watches=524288
+sysctl -p
+echo 'Defaults    env_keep += "SSH_AUTH_SOCK"' > /etc/sudoers.d/root_ssh_agent
+SSHD_CONFIG="/etc/ssh/sshd_config"
+if ! grep -q "^ClientAliveInterval" $SSHD_CONFIG; then
+  echo "ClientAliveInterval 60" >> $SSHD_CONFIG
+fi
+if ! grep -q "^ClientAliveCountMax" $SSHD_CONFIG; then
+  echo "ClientAliveCountMax 10000" >> $SSHD_CONFIG
+fi
+service ssh restart
+# permit root auth to bypass the hab studio if we wish so
+sed -r -i 's/^.+" ssh-/ssh-/' /root/.ssh/authorized_keys
+echo
+SCRIPT
+
+github_clone_automate = <<SCRIPT
+ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+cd #{home_dir}
+git clone git@github.com:chef/automate.git
+cd automate
+echo "export GITHUB_TOKEN=\"#{ENV['GITHUB_TOKEN']}\"" > .secrets
+git checkout #{latest_head_commit}
+SCRIPT
+
+install_deps = <<SCRIPT
+  echo " * Installing dependencies..."
+  pwd
+  # if screen -ls; then
+  #   screen -r
+  # else
+  #   screen hab studio enter
+  # fi
+SCRIPT
+
+Vagrant.configure('2') do |config|
+  config.vm.box = 'tknerr/managed-server-dummy'
+
+  config.vm.provider :managed do |managed, override|
+    managed.server = ssh_host
+    override.ssh.port = "22"
+    override.ssh.username = ssh_user
+    override.ssh.private_key_path = ssh_key_path
+  end
+
+  config.vm.synced_folder '.', '/vagrant', disabled: true
+
+  config.vm.provision 'Install dependencies', type: 'shell', inline: install_deps
+  config.vm.provision 'Install Victoria\'s bits', type: 'shell', inline: install_victorias_bits, :privileged => true
+  config.vm.provision 'Github clone automate', type: 'shell', inline: github_clone_automate
+end
