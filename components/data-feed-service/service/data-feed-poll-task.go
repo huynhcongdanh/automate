@@ -277,17 +277,21 @@ func (d *DataFeedPollTask) listReports(ctx context.Context, pageSize int32, feed
 		for report := range reports.Reports {
 			ipaddress := reports.Reports[report].Ipaddress
 			log.Debugf("report has ipaddress %v", ipaddress)
-			if _, ok := nodeIDs[ipaddress]; ok {
+			key := ipaddress
+			if key == "" {
+				key = reports.Reports[report].NodeId
+			}
+			if _, ok := nodeIDs[key]; ok {
 				// We must have a client run in the interval for the node with this ip
-				log.Debugf("node data already exists for %v", ipaddress)
-				nodeID := nodeIDs[ipaddress]
+				log.Debugf("node data already exists for %v", key)
+				nodeID := nodeIDs[key]
 				// set the NodeId.ComplianceID for this ip to the report ID
 				nodeID.ComplianceID = reports.Reports[report].Id
-				nodeIDs[ipaddress] = nodeID
+				nodeIDs[key] = nodeID
 			} else {
-				// ipaddress not in the mao so we add a new map entry with the report ID as ComplianceID
-				nodeIDs[ipaddress] = NodeIDs{ComplianceID: reports.Reports[report].Id}
-				log.Debugf("nodeID added %v", nodeIDs[ipaddress])
+				// key not in the map, so we add a new map entry with the report ID as ComplianceID
+				nodeIDs[key] = NodeIDs{ComplianceID: reports.Reports[report].Id}
+				log.Debugf("nodeID added %v", nodeIDs[key])
 			}
 		}
 		page++
