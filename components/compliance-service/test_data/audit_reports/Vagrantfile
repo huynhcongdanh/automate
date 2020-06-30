@@ -1,6 +1,25 @@
 require 'json'
 require 'open-uri'
 
+def extract_from_manifest(manifest, build)
+  puts "!!!!!!manifest=#{manifest}"
+  manifest_json = JSON.parse(open(manifest).read)
+  hab_version = manifest_json["hab"].find {|x| x.start_with?("core/hab/") }.split("/")[2]
+  git_sha = 'HEAD'
+  git_sha = manifest_json["git_sha"] if build != 'latest'
+  return hab_version, git_sha
+end
+
+def latest_build_from_versions(channel)
+  raise "Invalid channel #{channel}, can only be 'dev', 'current' or 'acceptance'" unless ['dev', 'current', 'acceptance'].include?(channel)
+  versions_url = "https://packages.chef.io/manifests/#{channel}/automate/versions.json"
+  puts " * Getting latest build from #{versions_url}"
+  versions_json = JSON.parse(open(versions_url).read)
+  build = versions_json.last
+  raise "Invalid build '#{build}' found for channel '#{channel}'" unless build =~ /^\d+$/
+  return build
+end
+
 if ['up', 'ssh', 'provision', 'halt'].include?(ARGV[0])
   raise 'ENV variable SSH_HOST is not defined!' if ENV['SSH_HOST'].nil?
   raise 'ENV variable SSH_KEY_PATH for the private key is not defined!' if ENV['SSH_KEY_PATH'].nil?
@@ -16,6 +35,9 @@ current_branch = `git rev-parse --abbrev-ref HEAD`
 latest_head_commit = `git rev-parse HEAD`
 latest_origin_commit = `git rev-parse origin/#{current_branch}`
 clean_tree = system('git status | grep "nothing to commit"')
+automate_channel = 'dev'
+automate_build = 'latest'
+manifest_url = "https://packages.chef.io/manifests/#{automate_channel}/automate/#{automate_build}.json"
 
 # Only run these checks on `vagrant up`
 if ['up', 'provision'].include?(ARGV[0])
@@ -37,7 +59,23 @@ if ['up', 'provision'].include?(ARGV[0])
   if ENV['GITHUB_TOKEN'].nil?
     raise "ENV variable GITHUB_TOKEN must be defined for this, aborting..."
   end
+
+  if !ENV['VERSION'].nil?
+    version = ENV['VERSION'].strip.split('/')
+    automate_channel = version[0]
+    if version[1].to_s =~ /^\d+$/
+      automate_build = version[1]
+    else
+      automate_build = latest_build_from_versions(automate_channel)
+    end
+  end
+  hab_version_from_manifest, git_sha_from_manifest = extract_from_manifest(manifest_url, automate_build)
 end
+
+install_hab = <<SCRIPT
+# Install the hab version specifid in the automate manifest
+curl --silent https://raw.githubusercontent.com/habitat-sh/habitat/master/components/hab/install.sh | sudo bash -s -- -v #{hab_version_from_manifest}
+SCRIPT
 
 install_victorias_bits = <<SCRIPT
 apt-get install git make -y
@@ -71,14 +109,36 @@ echo "export GITHUB_TOKEN=\"#{ENV['GITHUB_TOKEN']}\"" > .secrets
 git checkout #{latest_head_commit}
 SCRIPT
 
-install_deps = <<SCRIPT
-  echo " * Installing dependencies..."
-  pwd
-  # if screen -ls; then
-  #   screen -r
-  # else
-  #   screen hab studio enter
-  # fi
+install_docker = <<SCRIPT
+sudo apt-get remove docker docker-engine docker.io containerd runc
+sudo apt-get update
+sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common -y
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo apt-key fingerprint 0EBFCD88
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io -y
+echo "${USER}" > /tmp/user.txt
+sudo usermod -aG docker ${USER}
+SCRIPT
+
+install_ruby_and_stuff = <<SCRIPT
+https://packages.chef.io/files/stable/chef-workstation/20.6.62/ubuntu/18.0^Cchef-workstation_20.6.62-1_amd64.deb
+dpkg -i chef-workstation_20.6.62-1_amd64.deb
+echo 'export PATH=$PATH:/opt/chef-workstation/embedded/bin' >> ~/.bashrc
+source ~/.bashrc
+gem install bundler
+END
+SCRIPT
+
+install_automate = <<SCRIPT
+cd automate
+sudo sysctl -w vm.max_map_count=262144 # Needed for ElasticSearch 6
+echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/.local/bin:$HOME/bin' >> ~/.bashrc
+sudo ./scripts/install_inspec.sh
+sudo ./scripts/install_golang.sh
+sudo ./scripts/install_grpcurl.sh
+cd components/compliance-service
 SCRIPT
 
 Vagrant.configure('2') do |config|
@@ -93,7 +153,11 @@ Vagrant.configure('2') do |config|
 
   config.vm.synced_folder '.', '/vagrant', disabled: true
 
-  config.vm.provision 'Install dependencies', type: 'shell', inline: install_deps
+  config.ssh.forward_agent = true
+  config.vm.provision 'Install hab', type: 'shell', inline: install_hab
+  config.vm.provision 'Github clone automate', type: 'shell', inline: github_clone_automate, privileged: false
+  config.vm.provision 'Install Ruby and Stuff', type: 'shell', inline: install_ruby_and_stuff
+  config.vm.provision 'Install docker', type: 'shell', inline: install_docker
   config.vm.provision 'Install Victoria\'s bits', type: 'shell', inline: install_victorias_bits, :privileged => true
-  config.vm.provision 'Github clone automate', type: 'shell', inline: github_clone_automate
+  config.vm.provision 'Install automate', type: 'shell', inline: install_automate
 end

@@ -144,7 +144,7 @@ wait-for-compliance-service:
 run-log-level-info: clean build-inspec-runner $(MARKET_PATH) $(PROFILES_PATH)
 	$(MAKE) run-nodemanager
 	@printf "\n===> ${blue}Running compliance-service in background${reset} with logs redirected to ${yellow}$(COMPLIANCE_LOG_PATH)${reset}\n"
-	$(RUN_COMMAND_INFO) &> $(COMPLIANCE_LOG_PATH)&
+	$(RUN_COMMAND_INFO) > $(COMPLIANCE_LOG_PATH) 2>&1 &
 	# since we background the service, we need to give it some time to start
 	@$(MAKE) wait-for-compliance-service
 
@@ -152,7 +152,7 @@ run: clean build-inspec-runner $(MARKET_PATH) $(PROFILES_PATH)
 	@$(MAKE) golang_version_check
 	$(MAKE) run-nodemanager
 	@printf "\n===> ${blue}Running compliance-service in background${reset} with logs redirected to ${yellow}$(COMPLIANCE_LOG_PATH)${reset}\n"
-	$(RUN_COMMAND_DEBUG) &> $(COMPLIANCE_LOG_PATH)&
+	$(RUN_COMMAND_DEBUG) > $(COMPLIANCE_LOG_PATH) 2>&1 &
 	# since we background the service, we need to give it some time to start
 	@$(MAKE) wait-for-compliance-service
 
