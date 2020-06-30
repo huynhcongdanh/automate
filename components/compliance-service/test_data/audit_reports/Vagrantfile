@@ -140,8 +140,8 @@ echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/.local/bin:$HOME/bin' >> ~/.bash
 sudo ./scripts/install_inspec.sh
 sudo ./scripts/install_golang.sh
 sudo ./scripts/install_grpcurl.sh
-echo "--------------------------------------------------"
-echo "Done, `vagrant login` now and start running tests:"
+echo "------------------------------------------------------"
+echo "Done, run 'vagrant login' now and start running tests:"
 echo "  cd automate/components/compliance-service"
 echo "  TEST="00*" make run-test"
 SCRIPT
