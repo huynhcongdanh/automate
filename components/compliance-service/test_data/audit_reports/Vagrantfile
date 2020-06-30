@@ -156,7 +156,7 @@ Vagrant.configure('2') do |config|
   config.ssh.forward_agent = true
   config.vm.provision 'Install hab', type: 'shell', inline: install_hab
   config.vm.provision 'Github clone automate', type: 'shell', inline: github_clone_automate, privileged: false
-  config.vm.provision 'Install Ruby and Stuff', type: 'shell', inline: install_ruby_and_stuff
+  config.vm.provision 'Install Ruby and Stuff', type: 'shell', inline: install_ruby_and_stuff, :privileged => true
   config.vm.provision 'Install docker', type: 'shell', inline: install_docker
   config.vm.provision 'Install Victoria\'s bits', type: 'shell', inline: install_victorias_bits, :privileged => true
   config.vm.provision 'Install automate', type: 'shell', inline: install_automate
