@@ -140,7 +140,10 @@ echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/.local/bin:$HOME/bin' >> ~/.bash
 sudo ./scripts/install_inspec.sh
 sudo ./scripts/install_golang.sh
 sudo ./scripts/install_grpcurl.sh
-echo "Done from install_automate..."
+echo "--------------------------------------------------"
+echo "Done, `vagrant login` now and start running tests:"
+echo "  cd automate/components/compliance-service"
+echo "  TEST="00*" make run-test"
 SCRIPT
 
 Vagrant.configure('2') do |config|
