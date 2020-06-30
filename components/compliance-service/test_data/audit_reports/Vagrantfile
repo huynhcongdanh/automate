@@ -1,3 +1,7 @@
+#
+# Requires Ubuntu 18.04 ssh target
+#
+
 require 'json'
 require 'open-uri'
 
@@ -77,6 +81,37 @@ install_hab = <<SCRIPT
 curl --silent https://raw.githubusercontent.com/habitat-sh/habitat/master/components/hab/install.sh | sudo bash -s -- -v #{hab_version_from_manifest}
 SCRIPT
 
+github_clone_automate = <<SCRIPT
+ssh-keyscan -H github.com >> ~/.ssh/known_hosts
+cd #{home_dir}
+git clone git@github.com:chef/automate.git
+cd automate
+echo "export GITHUB_TOKEN=\"#{ENV['GITHUB_TOKEN']}\"" > .secrets
+git checkout #{latest_head_commit}
+SCRIPT
+
+install_ruby_and_stuff = <<SCRIPT
+set -x
+wget --no-verbose https://packages.chef.io/files/stable/chef-workstation/20.6.62/ubuntu/18.04/chef-workstation_20.6.62-1_amd64.deb
+sudo dpkg -i chef-workstation_20.6.62-1_amd64.deb
+echo 'eval "$(chef shell-init bash)"' >> ~/.bashrc
+sudo /opt/chef-workstation/embedded/bin/gem install bundler
+SCRIPT
+
+install_docker = <<SCRIPT
+set -x
+sudo apt-get remove docker docker-engine docker.io containerd runc
+sudo apt-get update
+sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common -y
+curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
+sudo apt-key fingerprint 0EBFCD88
+sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
+sudo apt-get update
+sudo apt-get install docker-ce docker-ce-cli containerd.io -y
+echo "${USER}" > /tmp/user.txt
+sudo usermod -aG docker ${USER}
+SCRIPT
+
 install_victorias_bits = <<SCRIPT
 apt-get install git make -y
 snap install jq
@@ -98,37 +133,6 @@ service ssh restart
 # permit root auth to bypass the hab studio if we wish so
 sed -r -i 's/^.+" ssh-/ssh-/' /root/.ssh/authorized_keys
 echo
-SCRIPT
-
-github_clone_automate = <<SCRIPT
-ssh-keyscan -H github.com >> ~/.ssh/known_hosts
-cd #{home_dir}
-git clone git@github.com:chef/automate.git
-cd automate
-echo "export GITHUB_TOKEN=\"#{ENV['GITHUB_TOKEN']}\"" > .secrets
-git checkout #{latest_head_commit}
-SCRIPT
-
-install_docker = <<SCRIPT
-sudo apt-get remove docker docker-engine docker.io containerd runc
-sudo apt-get update
-sudo apt-get install apt-transport-https ca-certificates curl gnupg-agent software-properties-common -y
-curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
-sudo apt-key fingerprint 0EBFCD88
-sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-sudo apt-get update
-sudo apt-get install docker-ce docker-ce-cli containerd.io -y
-echo "${USER}" > /tmp/user.txt
-sudo usermod -aG docker ${USER}
-SCRIPT
-
-install_ruby_and_stuff = <<SCRIPT
-https://packages.chef.io/files/stable/chef-workstation/20.6.62/ubuntu/18.0^Cchef-workstation_20.6.62-1_amd64.deb
-dpkg -i chef-workstation_20.6.62-1_amd64.deb
-echo 'export PATH=$PATH:/opt/chef-workstation/embedded/bin' >> ~/.bashrc
-source ~/.bashrc
-gem install bundler
-END
 SCRIPT
 
 install_automate = <<SCRIPT
@@ -156,7 +160,7 @@ Vagrant.configure('2') do |config|
   config.ssh.forward_agent = true
   config.vm.provision 'Install hab', type: 'shell', inline: install_hab
   config.vm.provision 'Github clone automate', type: 'shell', inline: github_clone_automate, privileged: false
-  config.vm.provision 'Install Ruby and Stuff', type: 'shell', inline: install_ruby_and_stuff, :privileged => true
+  config.vm.provision 'Install Ruby and Stuff', type: 'shell', inline: install_ruby_and_stuff, privileged: false
   config.vm.provision 'Install docker', type: 'shell', inline: install_docker
   config.vm.provision 'Install Victoria\'s bits', type: 'shell', inline: install_victorias_bits, :privileged => true
   config.vm.provision 'Install automate', type: 'shell', inline: install_automate
