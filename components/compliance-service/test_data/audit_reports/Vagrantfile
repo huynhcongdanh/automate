@@ -6,7 +6,6 @@ require 'json'
 require 'open-uri'
 
 def extract_from_manifest(manifest, build)
-  puts "!!!!!!manifest=#{manifest}"
   manifest_json = JSON.parse(open(manifest).read)
   hab_version = manifest_json["hab"].find {|x| x.start_with?("core/hab/") }.split("/")[2]
   git_sha = 'HEAD'
@@ -108,7 +107,6 @@ sudo apt-key fingerprint 0EBFCD88
 sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
 sudo apt-get update
 sudo apt-get install docker-ce docker-ce-cli containerd.io -y
-echo "${USER}" > /tmp/user.txt
 sudo usermod -aG docker ${USER}
 SCRIPT
 
@@ -142,7 +140,7 @@ echo 'export PATH=$PATH:/usr/local/go/bin:$HOME/.local/bin:$HOME/bin' >> ~/.bash
 sudo ./scripts/install_inspec.sh
 sudo ./scripts/install_golang.sh
 sudo ./scripts/install_grpcurl.sh
-cd components/compliance-service
+echo "Done from install_automate..."
 SCRIPT
 
 Vagrant.configure('2') do |config|
@@ -161,7 +159,13 @@ Vagrant.configure('2') do |config|
   config.vm.provision 'Install hab', type: 'shell', inline: install_hab
   config.vm.provision 'Github clone automate', type: 'shell', inline: github_clone_automate, privileged: false
   config.vm.provision 'Install Ruby and Stuff', type: 'shell', inline: install_ruby_and_stuff, privileged: false
-  config.vm.provision 'Install docker', type: 'shell', inline: install_docker
+  config.vm.provision 'Install docker', type: 'shell', inline: install_docker, privileged: false
   config.vm.provision 'Install Victoria\'s bits', type: 'shell', inline: install_victorias_bits, :privileged => true
-  config.vm.provision 'Install automate', type: 'shell', inline: install_automate
+  config.vm.provision 'Install automate', type: 'shell', inline: install_automate, privileged: false
 end
+
+puts %q(
+Done, `vagrant login` now and start running tests:
+  cd automate/components/compliance-service
+  TEST="00*" make run-test
+)
