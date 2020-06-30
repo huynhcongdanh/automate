@@ -144,6 +144,7 @@ echo "------------------------------------------------------"
 echo "Done, run 'vagrant login' now and start running tests:"
 echo "  cd automate/components/compliance-service"
 echo "  TEST="00*" make run-test"
+echo "--^--^--^--^--^--^--^--^--^--^--^--^--^--^--^--^--^--^--"
 SCRIPT
 
 Vagrant.configure('2') do |config|
@@ -166,9 +167,3 @@ Vagrant.configure('2') do |config|
   config.vm.provision 'Install Victoria\'s bits', type: 'shell', inline: install_victorias_bits, :privileged => true
   config.vm.provision 'Install automate', type: 'shell', inline: install_automate, privileged: false
 end
-
-puts %q(
-Done, `vagrant login` now and start running tests:
-  cd automate/components/compliance-service
-  TEST="00*" make run-test
-)
