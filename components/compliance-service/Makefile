@@ -81,8 +81,8 @@ build-mac:
 
 ## TOOLS ##
 ruby-grpc-tools:
-	@if ! gem list grpc -i; then gem install grpc -v 1.18.0 ; fi > /dev/null
-	@if ! gem list grpc-tools -i; then gem install grpc-tools -v 1.18.0; fi > /dev/null
+	@if ! gem list grpc -i; then gem install grpc -v 1.28.0 ; fi > /dev/null
+	@if ! gem list grpc-tools -i; then gem install grpc-tools -v 1.28.0; fi > /dev/null
 
 PROTOS = $(shell find ../../api/interservice/compliance ../../api/external/common -name '*.proto')
 RUBY_PROTOS = $(patsubst %.proto, %_pb.rb, $(PROTOS))

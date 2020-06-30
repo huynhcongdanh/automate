@@ -666,7 +666,7 @@ describe File.basename(__FILE__) do
       assert_equal("Skipping profile: 'myprofile1' on unsupported platform: 'mac_os_x/17.7.0'.", res['profiles'][0]['depends'][0]['skip_message'])
 
       assert_equal('skipped', res['profiles'][2]['status'])
-      assert_equal("Skipping profile: 'fake-baseline' on unsupported platform: 'amazon/2'.", res['profiles'][2]['skip_message'])
+      assert_equal("Skipping profile: 'fake-baseline' on unsupported platform: 'amazon/2'.", res['profiles'][2]['status_message'])
     end
 
     # Get a specific report filter by profile_id
