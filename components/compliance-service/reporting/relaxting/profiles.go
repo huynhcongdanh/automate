@@ -631,6 +631,10 @@ func (backend *ES2Backend) GetAllProfilesFromNodes(from int32, size int32, filte
 
 	LogQueryPartMin(esIndex, searchResult, fmt.Sprintf("%s - search result", myName))
 
+	max_profiles := int32(len(profilesToReturn))
+	if size < max_profiles {
+		max_profiles = size
+	}
 	profilesMetaMap := make(map[string]reportingapi.ProfileMin, 0)
 	if searchResult.TotalHits() > 0 && searchResult.Hits.TotalHits > 0 {
 		// Loop over the data from the compliance-profiles metadata index
@@ -662,11 +666,11 @@ func (backend *ES2Backend) GetAllProfilesFromNodes(from int32, size int32, filte
 		}
 		logrus.Debugf("%s searched for %d profile IDs, got %d", myName, len(profileIDs), len(profilesMetaMap))
 		logrus.Debugf("%s returning profiles=%+v with counts %+v", myName, profilesToReturn, counts)
-		return profilesToReturn, counts, nil
+		return profilesToReturn[0:max_profiles], counts, nil
 	}
 
 	logrus.Debugf("%s, found no profiles\n", myName)
-	return profilesToReturn, counts, nil
+	return profilesToReturn[0:max_profiles], counts, nil
 }
 
 func (backend ES2Backend) getProfileMinsFromNodes(

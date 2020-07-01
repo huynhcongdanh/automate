@@ -99,10 +99,10 @@ fi
 # grpcurl -d @ $CURL_OPTS_COMP.reporting.ReportingService/ListProfiles <<EOM
 # {
 #   "filters": [
-#     { "type": "end_time", "values":["2018-04-02T23:59:59Z"] }
+#     { "type": "end_time", "values":["2018-03-04T23:59:59Z"] }
 #   ],
 #   "page": 1,
-#   "per_page": 100
+#   "per_page": 3
 # }
 # EOM
 
